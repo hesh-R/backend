@@ -1,0 +1,69 @@
+# OS generated files #
+######################
+.DS_Store
+Thumbs.db
+
+# Yarn #
+########
+/node_modules
+/.pnp
+.pnp.js
+.env
+
+# Optional - Yarn Integrity file
+.yarn-integrity
+
+# Logs and crash reports #
+##########################
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Editor directories and files #
+#################################
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files #
+######################
+.DS_Store*
+ehthumbs.db
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# WebStorm #
+############
+.idea/
+
+# Node.js #
+###########
+node_modules/
+
+# Yarn #
+########
+yarn-error.log
+
+# Visual Studio Code #
+#####################
+.vscode/
+.idea/
+*.code-workspace
+
+# macOS #
+#########
+.DS_Store
+
+# Windows #
+###########
+Thumbs.db
