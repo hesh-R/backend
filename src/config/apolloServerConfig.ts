@@ -3,11 +3,14 @@ import { startStandaloneServer } from "@apollo/server/standalone";
 import { employeeTypeDefs } from "../schemas/employeeTypeDefs";
 import { employeeResolvers } from "../resolvers/employeeResolvers";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import { hrTypeDefs } from "../schemas/hrTypeDefs";
+import { otpTypeDefs } from "../schemas/otpTypeDefs";
+import hrResolvers from "../resolvers/hrResolver";
 
 export const serverInstance = async (httpServer: any) => {
   const server = new ApolloServer({
-    typeDefs: [employeeTypeDefs],
-    resolvers: [employeeResolvers],
+    typeDefs: [employeeTypeDefs, hrTypeDefs, otpTypeDefs],
+    resolvers: [employeeResolvers, hrResolvers],
     plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
   return server;

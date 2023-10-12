@@ -1,6 +1,12 @@
-import { EmployeeModel, Employee } from "../models/employee";
-import bcrypt from "bcrypt";
+import { EmployeeModel, Employee, OtpModel } from "../models/employee";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import {
+  generateOTP,
+  generateToken,
+  isValidPassword,
+  sendOTP,
+} from "../utils/validation";
 
 export const employeeResolvers = {
   Query: {
@@ -15,26 +21,27 @@ export const employeeResolvers = {
     createEmployee: async (_: any, args: Employee) => {
       const input = args;
       const newEmployee = new EmployeeModel(input);
-      const savedUser = newEmployee.save();
+      const savedUser = await newEmployee.save();
+      await sendOTP(savedUser.email, savedUser.password);
       return savedUser;
     },
 
     firstTimeLogin: async (_: any, args: Employee) => {
       try {
-        const { email, staffId } = args;
-        const newEmployee = email
-          ? await EmployeeModel.findOne({ email })
-          : await EmployeeModel.findOne({ staffId });
+        const { email, password } = args;
+        const newEmployee = await EmployeeModel.findOne({ email, password });
         return newEmployee;
       } catch (error) {
         throw new Error(error);
       }
     },
 
-    updatePassword: async (_id: any, input: Employee) => {
+    updatePassword: async (_: any, input: Employee) => {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(input.password, salt);
       const existingEmployee = await EmployeeModel.findOneAndUpdate(
         { staffId: input.staffId },
-        { password: input.password },
+        { password: hashedPassword },
         { new: true }
       );
       if (!existingEmployee) {
@@ -47,8 +54,8 @@ export const employeeResolvers = {
       try {
         const { staffId, email, password } = args;
         const existingEmployee = staffId
-          ? await EmployeeModel.findOne({ staffId }, { password })
-          : await EmployeeModel.findOne({ email }, { password });
+          ? await EmployeeModel.findOne({ staffId })
+          : await EmployeeModel.findOne({ email });
         const isValidPassword = await bcrypt.compare(
           password,
           existingEmployee.password
@@ -56,18 +63,23 @@ export const employeeResolvers = {
         if (!isValidPassword) {
           throw new Error("Invalid credentials");
         }
-        const token = jwt.sign(
-          { email: existingEmployee.email, staffId: existingEmployee.staffId },
-          "secretKey",
-          {
-            expiresIn: "1h",
-          }
-        );
-
+        const token = generateToken(email, staffId);
         return { existingEmployee, token };
       } catch (error) {
         throw new Error(error);
       }
+    },
+
+    updateAvatar: async (_: any, { email, avatar }: Employee) => {
+      const requiredEmployee = await EmployeeModel.findOneAndUpdate(
+        { email },
+        { avatar },
+        { new: true }
+      );
+      if (!requiredEmployee) {
+        throw new Error("Employee not found");
+      }
+      return requiredEmployee;
     },
   },
 };

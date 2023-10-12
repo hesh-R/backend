@@ -1,5 +1,5 @@
 import { HR, HRModel } from "../models/hr";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { generateToken } from "../utils/validation";
 const jwtSecret = process.env.JWT_SECRET as string;

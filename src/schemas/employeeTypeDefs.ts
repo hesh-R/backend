@@ -68,16 +68,6 @@ type Attendance {
     staffId:String
     password:String!
   }
-
-  input EmployeeFirstLoginInput {
-    email:String
-    staffId:String
-  }
-
-  input EmployeePasswordUpdate {
-    staffId:String!
-    password:String!
-  }
   
   type Query {
     getEmployee(id: ID!): Employee
@@ -85,10 +75,11 @@ type Attendance {
   }
   
   type Mutation {
-    firstTimeLogin(input:EmployeeFirstLoginInput):Employee
-    loginEmployee(input:EmployeeLoginInput):Employee
-    updatePassword(input:EmployeePasswordUpdate):Employee
     createEmployee(input: EmployeeInput!): Employee
+    firstTimeLogin(email:String!, password:String!):Employee
+    updatePassword(id:ID!, password:String!):Employee
+    loginEmployee(input:EmployeeLoginInput):Employee
+    updateAvatar(avatar:String!):Employee
     updateEmployee(id: ID!, input: EmployeeInput!): Employee
     deleteEmployee(id: ID!): Employee
   }

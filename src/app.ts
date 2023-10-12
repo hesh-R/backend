@@ -9,6 +9,7 @@ import cors from "cors";
 import morgan from "morgan";
 import employeeRoutes from "./routes/employee";
 import hrRoutes from "./routes/hr";
+import { cloudinaryMiddleware } from "./utils/cloudinary";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -17,6 +18,7 @@ app.use(express.json(), cors<cors.CorsRequest>());
 app.use(morgan("dev"));
 app.use("/employee", employeeRoutes);
 app.use("/hr", hrRoutes);
+app.use(cloudinaryMiddleware);
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello, TypeScript Express App!");
 });

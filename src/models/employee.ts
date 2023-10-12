@@ -1,15 +1,27 @@
-import mongoose, { Document, Schema } from "mongoose";
+import { Document, Schema, Types, model } from "mongoose";
 
 interface Attendance {
   date: Date;
   isPresent: boolean;
 }
 
+enum Status {
+  PENDING = "pending",
+  INPROGRESS = "in progress",
+  COMPLETE = "completed",
+}
+
+enum Priority {
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+}
+
 interface Task {
   description: string;
   deadline: Date;
-  priority: string;
-  status: string;
+  priority: Priority;
+  status: Status;
 }
 
 interface PerformanceMetric {
@@ -64,7 +76,18 @@ const employeeSchema: Schema<Employee> = new Schema({
   ],
 });
 
-export const EmployeeModel = mongoose.model<Employee>(
-  "Employee",
-  employeeSchema
-);
+export const EmployeeModel = model<Employee>("Employee", employeeSchema);
+
+export interface OtpInfo extends Document {
+  userId: string;
+  otp?: number;
+  expiry?: Date;
+}
+
+const otpSchema: Schema<OtpInfo> = new Schema({
+  userId: { type: String, required: true, unique: true },
+  otp: { type: Number, required: true },
+  expiry: { type: Date },
+});
+
+export const OtpModel = model<OtpInfo>("Otp", otpSchema);

@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
 import { employeeResolvers } from "../resolvers/employeeResolvers";
-import { Employee } from "../models/employee";
+import { Employee, OtpModel } from "../models/employee";
 import { hrResolvers } from "../resolvers/hrResolver";
+import { generateOTP, isValidPassword, sendOTP } from "../utils/validation";
+import { otpResolvers } from "../resolvers/otpResolvers";
 
 export const createEmployee = async (req: Request, res: Response) => {
   try {
     const { staffId } = req.body;
+    const otpDetails = generateOTP();
     const existingEmployee = await employeeResolvers.Query.getEmployee(
       null,
       staffId
@@ -17,8 +20,14 @@ export const createEmployee = async (req: Request, res: Response) => {
     }
     const newEmployee = await employeeResolvers.Mutation.createEmployee(null, {
       ...req.body,
-      password: Math.floor(Math.random() * 9000) + 1000,
+      password: otpDetails.otp,
     });
+    const newOtp = new OtpModel({
+      userId: newEmployee._id,
+      otp: Number(newEmployee.password),
+      expiry: otpDetails.expiry,
+    });
+    await otpResolvers.Mutation.generateOtp(null, newOtp);
     return res
       .status(201)
       .json({ message: "New Employee registered successfully", newEmployee });
@@ -33,12 +42,15 @@ export const firstLogin = async (req: Request, res: Response) => {
       null,
       req.body
     );
-    if (existingEmployee.password.length === 4) {
-      return res.status(403).json({ message: "Kindly update your password" });
+    if (!existingEmployee) {
+      return res.status(404).json("User not found, kindly register");
     }
+    await otpResolvers.Mutation.verifyOtp(null, {
+      otp: existingEmployee.password,
+    });
     return res
       .status(200)
-      .json({ message: "User already exists, kindly login" });
+      .json({ message: "User found, kindly update you password" });
   } catch (error) {
     return res.status(500).json(error);
   }
@@ -46,9 +58,18 @@ export const firstLogin = async (req: Request, res: Response) => {
 
 export const updatePassword = async (req: Request, res: Response) => {
   try {
+    const { staffId } = req.params;
+    const { password, confirmPassword } = req.body;
+    const validPassword = isValidPassword(password);
+    if (!validPassword) {
+      return res.status(400).json("Invalid Password");
+    }
+    if (password !== confirmPassword) {
+      return res.status(400).json("Passwords do not match");
+    }
     const recordToUpdate = await employeeResolvers.Mutation.updatePassword(
       null,
-      { ...req.params, ...req.body }
+      { ...req.body, staffId }
     );
     if (!recordToUpdate) {
       return res.status(404).json("Staff not found, kindly register");
@@ -75,5 +96,19 @@ export const loginEmployee = async (req: Request, res: Response) => {
       .json({ message: "User logged in successfully", validUser });
   } catch (error) {
     res.status(500).json(error);
+  }
+};
+
+export const updateEmployeeAvatar = async (
+  req: Request | any,
+  res: Response
+) => {
+  try {
+    console.log(req.user);
+    console.log(req.file);
+    console.log(req.body);
+    return res.send(req.file);
+  } catch (error) {
+    return res.status(500).json(error);
   }
 };
