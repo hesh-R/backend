@@ -20,7 +20,12 @@ export const generateOTP = () => {
   return { otp, expiry };
 };
 
-export const sendOTP = async (email: string, otp: string) => {
+export const sendOTP = async (
+  email: string,
+  otp: string,
+  officialEmail: string,
+  staffId: string
+) => {
   const transporter = nodemailer.createTransport({
     host: server,
     port: port,
@@ -42,8 +47,10 @@ export const sendOTP = async (email: string, otp: string) => {
       </h1>
       <h2>Confirm your email address</h2>
       <p>
-        An account has just been created for you on heshR. Your confirmation code is below — enter it as your password in the browser window on your first login.
+        An account has just been created for you on heshR. Enter the OTP below as your password alongside either your official email address or staff ID in the browser window on your first login.
       </p>
+      <p>Your official email address is <strong>${officialEmail}</strong></p>
+      <p>Your staff ID is <strong>${staffId}</strong></p>
       <h1>${otp}</h1>
       <p>Please enter this OTP to verify your account.</p>
       <p>Note that the OTP is only valid for 7 days.</p>

@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { employeeResolvers } from "../resolvers/employeeResolvers";
-import { Employee, OtpModel } from "../models/employee";
-import { hrResolvers } from "../resolvers/hrResolver";
+import { OtpModel } from "../models/employee";
 import { generateOTP, isValidPassword, sendOTP } from "../utils/validation";
 import { otpResolvers } from "../resolvers/otpResolvers";
+import { uploadToCloudinary } from "../utils/cloudinary";
 
 export const createEmployee = async (req: Request, res: Response) => {
   try {
@@ -16,11 +16,13 @@ export const createEmployee = async (req: Request, res: Response) => {
     if (existingEmployee) {
       return res
         .status(409)
-        .json(`Employee with employeeId:${staffId} already exists`);
+        .json(`Employee with staffId:${staffId} already exists`);
     }
+    const employeeAvatar = req.file && (await uploadToCloudinary(req.file));
     const newEmployee = await employeeResolvers.Mutation.createEmployee(null, {
       ...req.body,
       password: otpDetails.otp,
+      avatar: employeeAvatar,
     });
     const newOtp = new OtpModel({
       userId: newEmployee._id,
@@ -30,7 +32,7 @@ export const createEmployee = async (req: Request, res: Response) => {
     await otpResolvers.Mutation.generateOtp(null, newOtp);
     return res
       .status(201)
-      .json({ message: "New Employee registered successfully", newEmployee });
+      .json({ message: "New Employee registered successfully" });
   } catch (error) {
     return res.status(500).json(error);
   }
@@ -43,29 +45,32 @@ export const firstLogin = async (req: Request, res: Response) => {
       req.body
     );
     if (!existingEmployee) {
-      return res.status(404).json("User not found, kindly register");
+      return res
+        .status(404)
+        .json(`User with official email: ${req.body.officialEmail} not found`);
     }
     await otpResolvers.Mutation.verifyOtp(null, {
-      otp: existingEmployee.password,
+      otp: existingEmployee.newEmployee.password,
     });
-    return res
-      .status(200)
-      .json({ message: "User found, kindly update you password" });
+    return res.status(200).json({
+      message: "User found, kindly update you password",
+      existingEmployee,
+    });
   } catch (error) {
     return res.status(500).json(error);
   }
 };
 
-export const updatePassword = async (req: Request, res: Response) => {
+export const updatePassword = async (req: Request | any, res: Response) => {
   try {
-    const { staffId } = req.params;
+    const { staffId } = req.user;
     const { password, confirmPassword } = req.body;
+    if (password !== confirmPassword) {
+      return res.status(400).json("Passwords do not match");
+    }
     const validPassword = isValidPassword(password);
     if (!validPassword) {
       return res.status(400).json("Invalid Password");
-    }
-    if (password !== confirmPassword) {
-      return res.status(400).json("Passwords do not match");
     }
     const recordToUpdate = await employeeResolvers.Mutation.updatePassword(
       null,
@@ -104,10 +109,20 @@ export const updateEmployeeAvatar = async (
   res: Response
 ) => {
   try {
-    console.log(req.user);
-    console.log(req.file);
-    console.log(req.body);
-    return res.send(req.file);
+    const { email } = req.user;
+    const newImageUrl = req.file && (await uploadToCloudinary(req.file));
+    const input: any = {};
+    input["email"] = email;
+    input["avatar"] = newImageUrl;
+    const updatedUser =
+      newImageUrl &&
+      (await employeeResolvers.Mutation.updateAvatar(null, input));
+    if (!updatedUser) {
+      return res.status(404).json(`User with email: ${email} not found`);
+    }
+    return res
+      .status(200)
+      .json({ message: "Avatar updated successfully", updatedUser });
   } catch (error) {
     return res.status(500).json(error);
   }

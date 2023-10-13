@@ -25,6 +25,7 @@ type Attendance {
     phoneNumber: String!
     password:String!
     staffId: String!
+    officialEmail: String!
     avatar:String!
     attendance: [Attendance!]!
     leaveBalance: Int!
@@ -56,6 +57,7 @@ type Attendance {
     email: String!
     phoneNumber: String!
     staffId: String!
+    officialEmail: String!
     avatar:String
     attendance: [AttendanceInput!]
     leaveBalance: Int
@@ -64,19 +66,19 @@ type Attendance {
   }
 
   input EmployeeLoginInput {
-    email:String
+    officialEmail:String
     staffId:String
     password:String!
   }
   
   type Query {
-    getEmployee(id: ID!): Employee
+    getEmployee(staffId: String!): Employee
     getAllEmployees: [Employee]
   }
   
   type Mutation {
     createEmployee(input: EmployeeInput!): Employee
-    firstTimeLogin(email:String!, password:String!):Employee
+    firstTimeLogin(officialEmail:String!, password:String!):Employee
     updatePassword(id:ID!, password:String!):Employee
     loginEmployee(input:EmployeeLoginInput):Employee
     updateAvatar(avatar:String!):Employee

@@ -35,6 +35,7 @@ export interface Employee extends Document {
   phoneNumber: string;
   password: string;
   staffId: string;
+  officialEmail: string;
   position: string;
   department: string;
   avatar: string;
@@ -51,6 +52,7 @@ const employeeSchema: Schema<Employee> = new Schema({
   email: { type: String, required: true, unique: true },
   phoneNumber: { type: String, required: true, unique: true },
   staffId: { type: String, required: true, unique: true },
+  officialEmail: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   avatar: String,
   attendance: [

@@ -1,17 +1,11 @@
 import { EmployeeModel, Employee, OtpModel } from "../models/employee";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import {
-  generateOTP,
-  generateToken,
-  isValidPassword,
-  sendOTP,
-} from "../utils/validation";
+import { generateToken, sendOTP } from "../utils/validation";
 
 export const employeeResolvers = {
   Query: {
-    getEmployee: async (_: any, { staffId }: Employee) => {
-      return await EmployeeModel.findById(staffId);
+    getEmployee: async (_: any, staffId: Employee) => {
+      return await EmployeeModel.findOne({ staffId });
     },
     getAllEmployees: async () => {
       return await EmployeeModel.find().exec();
@@ -22,15 +16,27 @@ export const employeeResolvers = {
       const input = args;
       const newEmployee = new EmployeeModel(input);
       const savedUser = await newEmployee.save();
-      await sendOTP(savedUser.email, savedUser.password);
+      await sendOTP(
+        savedUser.email,
+        savedUser.password,
+        savedUser.officialEmail,
+        savedUser.staffId
+      );
       return savedUser;
     },
 
     firstTimeLogin: async (_: any, args: Employee) => {
       try {
-        const { email, password } = args;
-        const newEmployee = await EmployeeModel.findOne({ email, password });
-        return newEmployee;
+        const { officialEmail, password } = args;
+        const newEmployee = await EmployeeModel.findOne({
+          officialEmail,
+          password,
+        });
+        if (!newEmployee) {
+          return null;
+        }
+        const token = generateToken(officialEmail, newEmployee.staffId);
+        return { newEmployee, token };
       } catch (error) {
         throw new Error(error);
       }
@@ -52,10 +58,10 @@ export const employeeResolvers = {
 
     loginEmployee: async (_: any, args: Employee) => {
       try {
-        const { staffId, email, password } = args;
+        const { staffId, officialEmail, password } = args;
         const existingEmployee = staffId
           ? await EmployeeModel.findOne({ staffId })
-          : await EmployeeModel.findOne({ email });
+          : await EmployeeModel.findOne({ officialEmail });
         const isValidPassword = await bcrypt.compare(
           password,
           existingEmployee.password
@@ -63,16 +69,17 @@ export const employeeResolvers = {
         if (!isValidPassword) {
           throw new Error("Invalid credentials");
         }
-        const token = generateToken(email, staffId);
+        const token = generateToken(officialEmail, staffId);
         return { existingEmployee, token };
       } catch (error) {
         throw new Error(error);
       }
     },
 
-    updateAvatar: async (_: any, { email, avatar }: Employee) => {
+    updateAvatar: async (_: any, args: Employee) => {
+      const { officialEmail, avatar } = args;
       const requiredEmployee = await EmployeeModel.findOneAndUpdate(
-        { email },
+        { officialEmail },
         { avatar },
         { new: true }
       );
