@@ -22,7 +22,6 @@ export const hrResolvers = {
   },
   Mutation: {
     signupHR: async (_: any, input: HR) => {
-      console.log(input);
       const hashedPassword = await bcrypt.hash(input.password, 10);
       const newHR = new HRModel({ ...input, password: hashedPassword });
       await newHR.save();
